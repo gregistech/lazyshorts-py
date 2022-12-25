@@ -73,7 +73,7 @@ def overlay_end_text_on_clip(clip, end_time = 5):
     return concatenate_videoclips([clip.subclip(0, clip.end - end_time), CompositeVideoClip([clip.subclip(clip.end - end_time, clip.end), TextClip("A teljes videó megtalálható fő csatornáimon!", fontsize = 48, method = "caption", font = "Arial", color="white").set_duration(end_time).set_pos("center", "center")])])
 
 def burn_in_subs_to_file(file, sub_file):
-    subprocess.run(["ffmpeg", "-i", file, "-vf", f"subtitles={sub_file}:force_style='Alignment=2,MarginV=50,Fontsize=12'", "-c:a", "copy", f"short.mp4"])#,
+    subprocess.run(["ffmpeg", "-y", "-i", file, "-vf", f"subtitles={sub_file}:force_style='Alignment=2,MarginV=50,Fontsize=12'", "-c:a", "copy", f"short.mp4"])#,
         #stdout=subprocess.DEVNULL,
         #stderr=subprocess.STDOUT)
     return f"short.mp4"
@@ -92,6 +92,17 @@ def audio_to_segments(audio, model = "base", device = "cpu"):
     print(f"Transcribing audio ({audio}) to text segments...")
     return model.transcribe(audio)["segments"]
 
+def nums_to_segments(segments, nums):
+    nums = [num for num in nums if num.isdigit()]
+    nums = [num for num in nums if int(num) < len(segments)]
+    return [segments[int(i)] for i in nums]
+
+def input_to_command(inp, segments):
+    if len(inp) <= 0: return False, []
+    command = "r" if inp[0].isdigit() else inp[0]
+    selected = nums_to_segments(segments, inp[1:].split()) if command else nums_to_segments(inp[0].split())
+    return command, selected
+
 def print_segments(segments):
     for segment in segments:
         print(f"{segment['id']}: {segment['start']} -> {segment['end']}")
@@ -105,7 +116,7 @@ def edit_segments(segments):
 
 def generate_file(segments, original_file):
     print("Generating concatenated clip and syncing subtitles...")
-    concat, subs = segments_to_clip_and_subs(selected_segments, original_file)
+    concat, subs = segments_to_clip_and_subs(segments, original_file)
     
     print("Cropping to size...")
     cropped = crop_clip(concat)
@@ -125,17 +136,25 @@ print_segments(segments)
 run = True
 count = 0
 while run:
-    inp = input("Command: ")
-    if inp == "exit":
+    command, selected = input_to_command(input("(lazyshorts-py) "), segments)
+    if command == "q": # quit
         run = False
-    elif inp[0] == "p":
-        print_segments(segments)
-    elif inp[0] == "e":
-        selected_segments = [segments[int(i)] for i in inp[1:].split()]
-        print_segments(edit_segments(selected_segments))
+    elif command == "p": # print
+        print_segments(selected if len(selected) > 0 else segments)
+    elif command == "e": # edit
+        if len(selected) > 0:
+            print_segments(edit_segments(selected))
+        else:
+            print("You need to give atleast one segment to edit!")
+    elif command == "r": # render
+        if len(selected) > 0:
+            file = generate_file(selected, video)
+            print_segments(selected)
+            print(f"Done, wrote to {file}!")
+            count += 1
+        else:
+            print("You need to give atleast one segment to render!")
+    elif not command:
+        print("Your input cannot be empty!")
     else:
-        selected_segments = [segments[int(i)] for i in inp.split()]
-        file = generate_file(selected_segments, video)
-        print_segments(selected_segments)
-        print(f"Done, wrote to {file}!")
-        count += 1
+        print("Sorry, unknown command!")
