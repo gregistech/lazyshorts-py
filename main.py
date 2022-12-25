@@ -40,10 +40,10 @@ def enumerate_on_segments(segments, original, f):
         f(i, segment, original, last_end)
         last_end = get_segment_relative_end(segment, original, last_end)
 
-def segments_to_clip_and_subs(segments):
+def segments_to_clip_and_subs(segments, original_file):
         clips = []
         subs = []
-        original = VideoFileClip(fast)
+        original = VideoFileClip(original_file)
         enumerate_on_segments(segments, 
                 original, 
                 lambda i, segment, original, last_end: 
@@ -54,63 +54,88 @@ def segments_to_clip_and_subs(segments):
         )
         return concatenate_videoclips(clips), subs
 
-video = "project.mp4"
-print(f"Cutting silence out of video ({video})...")
-fast = cut_silence(video)
+def subs_to_file(subs):
+    sub_file = "subs.srt"
+    with open(sub_file, "w") as file:
+        file.write(srt.compose(subs))
+    return sub_file
 
-print(f"Converting video ({fast}) to audio...")
-audio = v_to_a(fast)
+def clip_to_file(clip):
+    clip_file = "end.mp4"
+    clip.write_videofile(clip_file, logger=None) 
+    return clip_file
 
-model = "base"
-device = "cpu"
-print(f"Loading Whisper model {model} on your {device}...")
-model = whisper.load_model(model, device = device)
+def crop_clip(clip):
+    (w, h) = clip.size
+    return crop(clip, x_center = w/2, y_center = h/2, width = 607, height = 1080)
 
-print(f"Transcribing audio ({audio}) to text segments...")
-segments = model.transcribe(audio)["segments"]
+def overlay_end_text_on_clip(clip, end_time = 5):
+    return concatenate_videoclips([clip.subclip(0, clip.end - end_time), CompositeVideoClip([clip.subclip(clip.end - end_time, clip.end), TextClip("A teljes videó megtalálható fő csatornáimon!", fontsize = 48, method = "caption", font = "Arial", color="white").set_duration(end_time).set_pos("center", "center")])])
 
-run = True
-count = 0
-while run:
+def burn_in_subs_to_file(file, sub_file):
+    subprocess.run(["ffmpeg", "-i", file, "-vf", f"subtitles={sub_file}:force_style='Alignment=2,MarginV=50,Fontsize=12'", "-c:a", "copy", f"short.mp4"])#,
+        #stdout=subprocess.DEVNULL,
+        #stderr=subprocess.STDOUT)
+    return f"short.mp4"
+
+
+def preprocess_video(original_file):
+    print(f"Cutting silence out of video ({original_file})...")
+    fast = cut_silence(original_file)
+    print(f"Converting video ({fast}) to audio...")
+    audio = v_to_a(fast)
+    return fast, audio
+
+def audio_to_segments(audio, model = "base", device = "cpu"):
+    print(f"Loading Whisper model {model} on {device}...")
+    model = whisper.load_model(model, device = device)
+    print(f"Transcribing audio ({audio}) to text segments...")
+    return model.transcribe(audio)["segments"]
+
+def print_segments(segments):
     for segment in segments:
         print(f"{segment['id']}: {segment['start']} -> {segment['end']}")
         print(segment['text'])
         print("---" * 25)
+
+def edit_segments(segments):
+    for segment in segments:
+        segment['text'] = editor.edit(contents=segment['text'].encode("UTF-8")).decode("UTF-8")
+    return segments
+
+def generate_file(segments, original_file):
+    print("Generating concatenated clip and syncing subtitles...")
+    concat, subs = segments_to_clip_and_subs(selected_segments, original_file)
+    
+    print("Cropping to size...")
+    cropped = crop_clip(concat)
+    
+    print("Putting on end text...")
+    end_file = clip_to_file(overlay_end_text_on_clip(cropped))
+
+    print("Burning-in subtitles...")
+    return burn_in_subs_to_file(end_file, subs_to_file(subs))
+
+original_file = "project.mp4"
+video, audio = preprocess_video(original_file)
+
+segments = audio_to_segments(audio)
+print_segments(segments)
+
+run = True
+count = 0
+while run:
     inp = input("Command: ")
     if inp == "exit":
         run = False
+    elif inp[0] == "p":
+        print_segments(segments)
     elif inp[0] == "e":
         selected_segments = [segments[int(i)] for i in inp[1:].split()]
-        for segment in selected_segments:
-            segment['text'] = editor.edit(contents=segment['text'].encode("UTF-8")).decode("UTF-8")
+        print_segments(edit_segments(selected_segments))
     else:
         selected_segments = [segments[int(i)] for i in inp.split()]
-        
-        print("Generating concatenated clip and syncing subtitles...")
-        concat, subs = segments_to_clip_and_subs(selected_segments)
-
-        sub_file = "subs.srt"
-        print(f"Writing out subtitles to {sub_file}...")
-        with open(sub_file, "w") as file:
-            file.write(srt.compose(subs))
-        
-        print("Cropping to size...")
-        # NOTE: my original idea was to use mediapipe:autoflip, but I don't have enough ram :) this will be enough for a prototype
-        (w, h) = concat.size
-        cropped = crop(concat, x_center = w/2, y_center = h/2, width = 607, height = 1080)
-        
-        print("Putting on end text...")
-        end_time = 5
-        end = concatenate_videoclips([cropped.subclip(0, cropped.end - end_time), CompositeVideoClip([cropped.subclip(cropped.end - end_time, cropped.end), TextClip("A teljes videó megtalálható fő csatornáimon!", fontsize = 48, method = "caption", font = "Arial", color="white").set_duration(end_time).set_pos("center", "center")])])
-        end_file = "end.mp4"
-        end.write_videofile(end_file, logger=None) # NOTE: moviepy buggy, can't compose properly AND can't use subtitles correctly
-        
-        print("Burning-in subtitles...")
-        subprocess.run(["ffmpeg", "-i", end_file, "-vf", f"subtitles={sub_file}:force_style='Alignment=2,MarginV=50,Fontsize=12'", "-c:a", "copy", f"shorts{count}.mp4"])#,
-                #stdout=subprocess.DEVNULL,
-                #stderr=subprocess.STDOUT)
-        print(f"Done, wrote to shorts{count}.mp4!")
+        file = generate_file(selected_segments, video)
+        print_segments(selected_segments)
+        print(f"Done, wrote to {file}!")
         count += 1
-            
-
-
