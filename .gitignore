@@ -3,3 +3,5 @@
 *.srt
 mediapipe/
 moviepy/
+
+*.swp
