@@ -127,15 +127,7 @@ def generate_file(segments, original_file):
     print("Burning-in subtitles...")
     return burn_in_subs_to_file(end_file, subs_to_file(subs))
 
-original_file = "project.mp4"
-video, audio = preprocess_video(original_file)
-
-segments = audio_to_segments(audio)
-print_segments(segments)
-
-run = True
-count = 0
-while run:
+def main_loop(segments, video):
     command, selected = input_to_command(input("(lazyshorts-py) "), segments)
     if command == "q": # quit
         run = False
@@ -150,11 +142,32 @@ while run:
         if len(selected) > 0:
             file = generate_file(selected, video)
             print_segments(selected)
-            print(f"Done, wrote to {file}!")
-            count += 1
+            print(f"Done, wrote temporarily to {file}!")
+            return file
         else:
             print("You need to give atleast one segment to render!")
     elif not command:
         print("Your input cannot be empty!")
     else:
         print("Sorry, unknown command!")
+    return False
+
+
+original_file = "project.mp4"
+
+try:
+    video, audio = preprocess_video(original_file)
+    segments = audio_to_segments(audio)
+except KeyboardInterrupt:
+    print("\nUser interrupted video preprocess/transcribe!")
+    sys.exit(125)
+
+print_segments(segments)
+run = True
+count = 0
+while run:
+    try:
+        file = main_loop(segments, video, count)
+    except KeyboardInterrupt:
+        print()
+        sys.exit(0)
