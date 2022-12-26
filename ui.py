@@ -31,7 +31,7 @@ class UI:
     def _main_loop(self, handler):
         command, selected = self._input_to_command(input("(lazyshorts-py) "))
         if command == "q": # quit
-            run = False
+            UI._exit()
         elif command == "p": # print
             self._print_segments(selected if len(selected) > 0 else self.handler.segments)
         elif command == "e": # edit
@@ -57,16 +57,18 @@ class UI:
         try:
             self.handler.original_video_file = original_file
         except KeyboardInterrupt:
-            print("\nUser interrupted video preprocess/transcribe!")
-            sys.exit(125)
+            UI._exit(125, "\nUser interrupted video preprocess/transcribe!")
+
     def _handle_loop(self):
-        run = True
-        while run:
+        while True:
             try:
                 file = self._main_loop(self.handler)
             except KeyboardInterrupt:
-                print()
-                sys.exit(0)
+               UI. _exit()
+    
+    def _exit(code = 0, msg = ""):
+        print(msg)
+        sys.exit(code)
 
     def _start(self, file):
         self._handle_preprocess(file)
