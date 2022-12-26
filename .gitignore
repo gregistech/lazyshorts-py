@@ -5,3 +5,5 @@ mediapipe/
 moviepy/
 
 *.swp
+
+__pycache__/
