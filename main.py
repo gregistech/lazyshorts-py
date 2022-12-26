@@ -19,14 +19,14 @@ class PipelineHandler:
 
     def _cut_silence(video):
         fast = "fast.mp4"
-        #subprocess.run(["auto-editor", video, "--no-open", "-o", fast],
-        #        stdout=subprocess.DEVNULL,
-        #        stderr=subprocess.STDOUT)
+        subprocess.run(["auto-editor", video, "--no-open", "-o", fast],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.STDOUT)
         return fast
     def _v_to_a(video):
         clip = VideoFileClip(video)
         audio = "audio.wav"
-        #clip.audio.write_audiofile(audio, logger=None)
+        clip.audio.write_audiofile(audio, logger=None)
         return audio
     def _preprocess_video(original_video):
         video = PipelineHandler._cut_silence(original_video)
@@ -115,8 +115,9 @@ def nums_to_segments(segments, nums):
 
 def input_to_command(inp, segments):
     if len(inp) <= 0: return False, []
-    command = "r" if inp[0].isdigit() else inp[0]
-    selected = nums_to_segments(segments, inp[1:].split()) if command else nums_to_segments(inp[0].split())
+    is_first_letter = not inp[0].isdigit()
+    command = "r" if not is_first_letter else inp[0]
+    selected = nums_to_segments(segments, inp[1:].split()) if is_first_letter else nums_to_segments(segments, inp.split())
     return command, selected
 
 def print_segments(segments):
