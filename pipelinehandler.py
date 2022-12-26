@@ -1,6 +1,7 @@
 import subprocess
 
-import whisper
+from transcriber import Transcriber
+
 import editor
 
 import srt
@@ -10,11 +11,13 @@ from moviepy.editor import *
 from moviepy.video.tools.subtitles import SubtitlesClip
 from moviepy.video.fx.all import crop
 
+
 class PipelineHandler:
     def __init__(self, original_video_file = False):
         self._video = ""
         self.segments = ""
         self._original_video_file = ""
+        self.transcriber = Transcriber()
         if original_video_file:
             self.set_original_video_file(original_video_file)
 
@@ -34,12 +37,9 @@ class PipelineHandler:
         audio = PipelineHandler._v_to_a(video)
         return video, audio
 
-    def _audio_to_segments(audio, model = "base", device = "cpu"):
-        model = whisper.load_model(model, device = device)
-        return model.transcribe(audio)["segments"]
-    def _process_video(video):
+    def _process_video(self, video):
         video, audio = PipelineHandler._preprocess_video(video)
-        return video, PipelineHandler._audio_to_segments(audio)
+        return video, self.transcriber.audio_to_segments(audio)
     
     @property
     def original_video_file(self):
@@ -47,7 +47,7 @@ class PipelineHandler:
     @original_video_file.setter
     def original_video_file(self, video_file):
         self._original_video_file = video_file
-        self._video, self.segments = PipelineHandler._process_video(video_file)
+        self._video, self.segments = self._process_video(video_file)
 
     # NOTE: whisper can return longer timestamps than original duration...
     def _get_segment_end(self, segment):
