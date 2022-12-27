@@ -28,7 +28,6 @@ class PipelineHandler:
         fast = self.work_dir_handler.create_file("fast.mp4")
         # NOTE: clean up as auto-editor leaves this behind...
         self.work_dir_handler.register_name("ae-22w46a")
-        # FIXME: temp dir is not picked up (it works on the command-line...) but user-specified dir works
         subprocess.run(
             [
                 "auto-editor", 
