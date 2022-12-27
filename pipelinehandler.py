@@ -1,6 +1,7 @@
 import subprocess
 
 from transcriber import Transcriber
+from working_directory_manager import WorkingDirectoryManager
 
 import editor
 
@@ -11,48 +12,7 @@ from moviepy.editor import *
 from moviepy.video.tools.subtitles import SubtitlesClip
 from moviepy.video.fx.all import crop
 
-import tempfile
 import shutil
-
-import uuid
-from pathlib import Path
-import os
-class WorkingDirectoryManager:
-    def __init__(self, work_dir = False):
-        self._work_dir = work_dir
-        self._is_work_dir_created = work_dir
-        self._is_work_dir_set_by_user = work_dir
-        self._registered_files = []
-
-    @property
-    def work_dir(self):
-        if not self._is_work_dir_created:
-            if self._is_work_dir_set_by_user:
-                Path(self._work_dir).mkdir(parents=True, exist_ok=True)
-            else:
-                self.work_dir = tempfile.mkdtemp() 
-        return self._work_dir
-    @work_dir.setter
-    def work_dir(self, work_dir):
-        self._work_dir = work_dir + "/"
-
-    def __del__(self):
-        self._cleanup_work_dir()
-
-    def _delete_registered_files(self):
-        for file in self._registered_files:
-            os.remove(file)
-
-    def _cleanup_work_dir(self):
-        if self._is_work_dir_set_by_user:
-            PipelineHandler._delete_registered_files()
-        else:
-            shutil.rmtree(self.work_dir)
-
-    def create_file(self, file):
-        new_file = self.work_dir + str(uuid.uuid4()) + file
-        self._registered_files.append(new_file)
-        return new_file
 
 class PipelineHandler:
     def __init__(self, original_video_file = False):
@@ -60,16 +20,24 @@ class PipelineHandler:
         self.segments = ""
         self._original_video_file = ""
         self.transcriber = Transcriber()
-        self.work_dir_handler = WorkingDirectoryManager()
+        self.work_dir_handler = WorkingDirectoryManager("./work")
         if original_video_file:
             self.set_original_video_file(original_video_file)
     
     def _cut_silence(self, video):
         fast = self.work_dir_handler.create_file("file.mp4")
-        # FIXME: temp dir is not picked up (it works on the command-line...)
-        proc = subprocess.run(["auto-editor", video, "--no-open", "--temp-dir", self.work_dir_handler.work_dir, "-o", fast],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.STDOUT)
+        # FIXME: temp dir is not picked up (it works on the command-line...) but user-specified dir works
+        proc = subprocess.run(
+            [
+                "auto-editor", 
+                video, 
+                "--no-open", 
+                "--temp-dir", self.work_dir_handler.work_dir + "/auto-editor", 
+                "-o", fast
+            ],
+            #stdout=subprocess.DEVNULL,
+            #stderr=subprocess.STDOUT
+        )
         print(proc)
         return fast
     def _v_to_a(self, video):
