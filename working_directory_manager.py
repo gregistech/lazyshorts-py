@@ -1,4 +1,3 @@
-import shutil
 import tempfile
 import uuid
 from pathlib import Path
@@ -10,7 +9,7 @@ class WorkingDirectoryManager:
         self.work_dir = work_dir
         self._is_work_dir_created = work_dir
         self._is_work_dir_set_by_user = work_dir
-        self._registered_files = []
+        self._registered = []
 
     @property
     def work_dir(self):
@@ -27,17 +26,27 @@ class WorkingDirectoryManager:
     def __del__(self):
         self._cleanup_work_dir()
 
-    def _delete_registered_files(self):
-        for file in self._registered_files:
-            os.remove(file)
+    def _delete_registered(self):
+        for file in self._registered:
+            Path(file).unlink(missing_ok=True)
 
     def _cleanup_work_dir(self):
         if self._is_work_dir_set_by_user:
-            self._delete_registered_files()
+            self._delete_registered()
         else:
-            shutil.rmtree(self.work_dir)
+            Path(self.work_dir).unlink(missing_ok=True)
+    
+    def _generate_name(self, name):
+        return self.work_dir + str(uuid.uuid4()) + name
+    def _register_name(self, name):
+        new_name = self._generate_name(name)
+        self._registered.append(new_name)
+        return new_name
 
+
+    def create_dir(self, directory):
+        new_dir = self._register_name(directory)
+        Path(new_dir).mkdir(parents=True, exist_ok=True)
+        return new_dir
     def create_file(self, file):
-        new_file = self.work_dir + str(uuid.uuid4()) + file
-        self._registered_files.append(new_file)
-        return new_file
+        return self._register_name(file)
