@@ -26,6 +26,8 @@ class PipelineHandler:
     
     def _cut_silence(self, video):
         fast = self.work_dir_handler.create_file("fast.mp4")
+        # NOTE: clean up as auto-editor leaves this behind...
+        self.work_dir_handler.register_name("ae-22w46a")
         # FIXME: temp dir is not picked up (it works on the command-line...) but user-specified dir works
         subprocess.run(
             [
@@ -38,8 +40,6 @@ class PipelineHandler:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.STDOUT
         )
-        # NOTE: clean up as auto-editor leaves this behind...
-        self.work_dir_handler.create_dir("ae-22w46a")
         return fast
     def _v_to_a(self, video):
         clip = VideoFileClip(video)
@@ -110,7 +110,7 @@ class PipelineHandler:
 
     def _burn_in_subs_to_file(self, file, sub_file):
         subbed_file = self.work_dir_handler.create_file("subbed.mp4")
-        subprocess.run(["ffmpeg", "-y", "-i", file, "-vf", f"subtitles={sub_file}:force_style='Alignment=2,MarginV=50,Fontsize=12'", "-c:a", "copy", subbed_file])#,
+        subprocess.run(["ffmpeg", "-y", "-i", file, "-vf", f"subtitles={sub_file}:force_style='Alignment=2,MarginV=50,Fontsize=12'", "-c:a", "copy", subbed_file],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.STDOUT)
         return subbed_file
