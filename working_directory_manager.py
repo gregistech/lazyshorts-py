@@ -11,18 +11,21 @@ class WorkingDirectoryManager:
         self._is_work_dir_created = work_dir
         self._is_work_dir_set_by_user = work_dir
         self._registered = []
-
-    @property
-    def work_dir(self):
+    
+    def _ensure_work_dir(self):
         if not self._is_work_dir_created:
             if self._is_work_dir_set_by_user:
                 Path(self._work_dir).mkdir(parents=True, exist_ok=True)
             else:
                 self.work_dir = tempfile.mkdtemp() 
+            self._is_work_dir_created = True
+    @property
+    def work_dir(self):
+        self._ensure_work_dir()
         return self._work_dir
     @work_dir.setter
     def work_dir(self, work_dir):
-        self._work_dir = work_dir + "/"
+        self._work_dir = work_dir + "/" if work_dir else False
 
     def __del__(self):
         self._cleanup_work_dir()

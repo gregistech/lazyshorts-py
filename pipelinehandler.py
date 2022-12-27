@@ -20,7 +20,7 @@ class PipelineHandler:
         self.segments = ""
         self._original_video_file = ""
         self.transcriber = Transcriber()
-        self.work_dir_handler = WorkingDirectoryManager("./work")
+        self.work_dir_handler = WorkingDirectoryManager()
         if original_video_file:
             self.set_original_video_file(original_video_file)
     
