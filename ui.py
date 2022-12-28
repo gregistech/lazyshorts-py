@@ -1,14 +1,14 @@
 import sys
 
 class UI:
-    def __init__(self, handler, file = "project.mp4"):
-        self.handler = handler
-        self._start(file)
+    def __init__(self, render_manager):
+        self._render_manager = render_manager
+        self._start("project.mp4")
 
     def _nums_to_segments(self, nums):
         nums = [num for num in nums if num.isdigit()]
-        nums = [num for num in nums if int(num) < len(self.handler.segments)]
-        return [self.handler.segments[int(i)] for i in nums]
+        nums = [num for num in nums if int(num) < len(self._render_manager.segments)]
+        return [self._render_manager.segments[int(i)] for i in nums]
 
     def _input_to_command(self, inp):
         if len(inp) <= 0: return False, []
@@ -28,12 +28,12 @@ class UI:
             segment['text'] = editor.edit(contents=segment['text'].encode("UTF-8")).decode("UTF-8")
         return segments
 
-    def _main_loop(self, handler):
+    def _main_loop(self):
         command, selected = self._input_to_command(input("(lazyshorts-py) "))
         if command == "q": # quit
             UI._exit()
         elif command == "p": # print
-            self._print_segments(selected if len(selected) > 0 else self.handler.segments)
+            UI._print_segments(selected if len(selected) > 0 else self._render_manager.segments)
         elif command == "e": # edit
             if len(selected) > 0:
                 UI._print_segments(UI._edit_segments(selected))
@@ -41,36 +41,40 @@ class UI:
                 print("You need to give atleast one segment to edit!")
         elif command == "r": # render
             if len(selected) > 0:
-                file = self.handler.render_file(selected, "short.mp4")
+                file = "short.mp4"
+                self._render_manager.add_to_queue((selected, file))
+                print()
                 UI._print_segments(selected)
-                print(f"Done, wrote to {file}!")
-                return file
+                print(f"Added {file} to the queue with the above segments!")
             else:
                 print("You need to give atleast one segment to render!")
+        elif command == "s": # state
+            for state in self._render_manager.get_renderer_states():
+                print()
+                print(f"{state[0]}: {state[1]} ({state[2]})")
         elif not command:
             print("Your input cannot be empty!")
         else:
             print("Sorry, unknown command!")
         return False
 
-    def _handle_preprocess(self, original_file):
-        try:
-            self.handler.original_video_file = original_file
-        except KeyboardInterrupt:
-            UI._exit(125, "\nUser interrupted video preprocess/transcribe!")
-
     def _handle_loop(self):
         while True:
             try:
-                file = self._main_loop(self.handler)
+                self._main_loop()
             except KeyboardInterrupt:
-               UI. _exit()
+               UI._exit()
     
     def _exit(code = 0, msg = ""):
         print(msg)
         sys.exit(code)
+    
+    def _ready(self):
+        UI._print_segments(self._render_manager.segments)
+        print("Preprocess done!")
+        self._handle_loop()
 
     def _start(self, file):
-        self._handle_preprocess(file)
-        UI._print_segments(self.handler.segments)
-        self._handle_loop()
+        print(f"Sending {file} to preprocess: this might take a while...")
+        self._render_manager.input_file = file
+        self._ready()
