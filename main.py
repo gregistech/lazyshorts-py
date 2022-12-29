@@ -11,8 +11,6 @@ if __name__ == '__main__':
     preprocess_handler = PreprocessHandler(wdmng, transcriber)
 
     rdmng = RenderManager(wdmng, preprocess_handler)
-    mgmt_proc = rdmng.start()
-    mgmt_proc.start()
 
     UI(rdmng)
 

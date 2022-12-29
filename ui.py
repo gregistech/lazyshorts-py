@@ -3,7 +3,7 @@ import sys
 class UI:
     def __init__(self, render_manager):
         self._render_manager = render_manager
-        self._start("project.mp4")
+        self._start("test2.mp4")
 
     def _nums_to_segments(self, nums):
         nums = [num for num in nums if num.isdigit()]
@@ -49,7 +49,7 @@ class UI:
             else:
                 print("You need to give atleast one segment to render!")
         elif command == "s": # state
-            for state in self._render_manager.get_renderer_states():
+            for state in self._render_manager.renderer_states:
                 print()
                 print(f"{state[0]}: {state[1]} ({state[2]})")
         elif not command:
@@ -76,5 +76,5 @@ class UI:
 
     def _start(self, file):
         print(f"Sending {file} to preprocess: this might take a while...")
-        self._render_manager.input_file = file
+        self._render_manager.start(file)
         self._ready()

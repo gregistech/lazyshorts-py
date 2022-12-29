@@ -2,6 +2,9 @@
 import subprocess
 from moviepy.editor import VideoFileClip
 
+from queue import Empty
+from multiprocessing import Process, Queue
+
 class PreprocessHandler:
     def __init__(self, work_dir_handler, transcriber):
         self._work_dir_handler = work_dir_handler
