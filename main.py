@@ -31,8 +31,19 @@ def main():
                 default = "cpu"
         )
 
+        parser.add_argument("--end_time", 
+                help = "The n last seconds when the tool should burn-in the end_text.", 
+                type=int,
+                default=5
+        )
+
         parser.add_argument("file", 
                 help = "The file on which the tool should work on."
+        )
+
+        parser.add_argument("end_text", 
+                help = "The text that will be burnt into the specified end_time last seconds.",
+                default = "The End"
         )
 
         args = parser.parse_args()
@@ -45,7 +56,9 @@ def main():
         transcriber = Transcriber(model, device)
 
         preprocess_handler = PreprocessHandler(wdmng, transcriber)
-        rdmng = RenderManager(wdmng, preprocess_handler)
+        end_text = args.end_text
+        end_time = args.end_time
+        rdmng = RenderManager(wdmng, preprocess_handler, end_text, end_time)
         
         file = args.file
         UI(NAME, file, rdmng)

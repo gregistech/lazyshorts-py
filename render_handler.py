@@ -21,10 +21,11 @@ class RenderStatus(Enum):
     FINISH = auto()
 
 class RenderHandler():
-    def __init__(self, wdmng, video, render):
+    def __init__(self, wdmng, video, render, end_text, end_time):
         self.wdmng = wdmng
         self._video = video
         self._segments, self._final_file = render
+        self._end_text, self._end_time = end_text, end_time
     
     # NOTE: whisper can return longer timestamps than original duration...
     def _get_segment_end(self, segment):
@@ -71,8 +72,8 @@ class RenderHandler():
         clip_file = self.wdmng.create_file("end.mp4")
         clip.write_videofile(clip_file, logger=None) 
         return clip_file
-    def _overlay_end_text_on_clip(clip, end_time = 5):
-        return concatenate_videoclips([clip.subclip(0, clip.end - end_time), CompositeVideoClip([clip.subclip(clip.end - end_time, clip.end), TextClip("A teljes videó megtalálható fő csatornáimon!", fontsize = 48, method = "caption", font = "Arial", color="white").set_duration(end_time).set_position("center", "center")])])
+    def _overlay_end_text_on_clip(clip, end_text = "The End", end_time = 5):
+        return concatenate_videoclips([clip.subclip(0, clip.end - end_time), CompositeVideoClip([clip.subclip(clip.end - end_time, clip.end), TextClip(end_text, fontsize = 48, method = "caption", font = "Arial", color="white").set_duration(end_time).set_position("center", "center")])])
 
     def _burn_in_subs_to_file(self, file, sub_file):
         subbed_file = self.wdmng.create_file("subbed.mp4")
@@ -94,7 +95,7 @@ class RenderHandler():
         cropped = RenderHandler._crop_clip(concat)
 
         state[:] = [RenderStatus.END_CLIP, .6]
-        end_file = self._clip_to_file(RenderHandler._overlay_end_text_on_clip(cropped))
+        end_file = self._clip_to_file(RenderHandler._overlay_end_text_on_clip(cropped, self._end_text, self._end_time))
 
         state[:] = [RenderStatus.SUB_CLIP, .8]
         subbed_file = self._burn_in_subs_to_file(end_file, self._subs_to_file(subs))

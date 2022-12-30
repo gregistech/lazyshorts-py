@@ -5,13 +5,14 @@ from multiprocessing import Process, Queue, Pool, Manager
     
 
 class RenderManager():
-    def __init__(self, wdmng, preprocess_handler):
+    def __init__(self, wdmng, preprocess_handler, end_text, end_time):
         self._wdmng = wdmng
         self._preprocess_handler = preprocess_handler
         self.video, self.segments = "", []
         self._queue = Queue()
         self._manager = Manager()
         self.renderer_states = self._manager.list()
+        self._end_text, self._end_time = end_text, end_time
     
     def add_to_queue(self, render):
         self._queue.put(render)
@@ -40,7 +41,7 @@ class RenderManager():
         try:
             render = self._queue.get_nowait()
             state = self._manager.list()
-            renderer = RenderHandler(self._wdmng, self.video, render)
+            renderer = RenderHandler(self._wdmng, self.video, render, self._end_text, self._end_time)
             process = Process(target=renderer.render_file, args=(state,), daemon=True).start()
             self.renderer_states.append([state, render[1]])
         except Empty:
