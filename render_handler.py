@@ -65,6 +65,7 @@ class RenderHandler():
         (w, h) = clip.size
         return crop(clip, x_center = w/2, y_center = h/2, width = 607, height = 1080)
     def _clip_to_file(self, clip):
+        # FIXME: this blocks the main process after multiple runs somehow, moviepy is unmaintained, I might need to switch libraries...
         clip_file = self.wdmng.create_file("end.mp4")
         clip.write_videofile(clip_file, logger=None) 
         return clip_file

@@ -29,9 +29,7 @@ class UI:
         return segments
 
     def _main_loop(self, count):
-        print("before in")
         command, selected = self._input_to_command(input("(lazyshorts-py) "))
-        print("after in")
         if command == "q": # quit
             UI._exit()
         elif command == "p": # print
@@ -63,7 +61,6 @@ class UI:
     def _handle_loop(self):
         count = 0
         while True:
-            print("start")
             try:
                 self._main_loop(count)
             except KeyboardInterrupt:
