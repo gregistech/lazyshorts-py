@@ -21,7 +21,7 @@ def main():
         parser.add_argument("--whisper_model", 
                 type = str, 
                 help = "The model which Whisper should use.", 
-                choices = ["tiny", "tiny.eng", "base", "base.en", "small", "small.en", "medium", "medium.en", "large"],
+                choices = ["tiny", "tiny.en", "base", "base.en", "small", "small.en", "medium", "medium.en", "large"],
                 default = "small"
         )
         parser.add_argument("--whisper_device", 

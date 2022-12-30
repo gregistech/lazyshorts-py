@@ -15,13 +15,15 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
         long_description = long_description,
         long_description_content_type = "text/markdown",
         url = 'https://github.com/gergovari/lazyshorts-py',
-        py_modules = ['app'],
         packages = find_packages(),
         install_requires = [requirements],
         python_requires='>=3.7',
         classifiers=[
             "Programming Language :: Python :: 3.8",
             "Operating System :: OS Independent",
+        ],
+        dependency_links = [
+            "https://download.pytorch.org/whl/torch_stable.html"
         ],
         entry_points = '''
             [console_scripts]

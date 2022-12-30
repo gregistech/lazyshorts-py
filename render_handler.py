@@ -72,7 +72,7 @@ class RenderHandler():
         clip.write_videofile(clip_file, logger=None) 
         return clip_file
     def _overlay_end_text_on_clip(clip, end_time = 5):
-        return concatenate_videoclips([clip.subclip(0, clip.end - end_time), CompositeVideoClip([clip.subclip(clip.end - end_time, clip.end), TextClip("A teljes videó megtalálható fő csatornáimon!", fontsize = 48, method = "caption", font = "Arial", color="white").set_duration(end_time).set_pos("center", "center")])])
+        return concatenate_videoclips([clip.subclip(0, clip.end - end_time), CompositeVideoClip([clip.subclip(clip.end - end_time, clip.end), TextClip("A teljes videó megtalálható fő csatornáimon!", fontsize = 48, method = "caption", font = "Arial", color="white").set_duration(end_time).set_position("center", "center")])])
 
     def _burn_in_subs_to_file(self, file, sub_file):
         subbed_file = self.wdmng.create_file("subbed.mp4")

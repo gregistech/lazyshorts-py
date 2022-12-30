@@ -1,6 +1,8 @@
 uuid
 editor
-whisper
-moviepy
+torch==1.13.1+cpu
+whisper-openai
+moviepy==2.0.0.dev2
 argparse
 srt
+auto-editor

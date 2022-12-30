@@ -1,14 +1,30 @@
 # LazyShorts
 
 A command-line tool to convert long-form videos into multiple short-form videos, with burned-in text and subtitles.
+It also cuts out unwanted silence.
 
 
-## Arguments
+## Preview
+
+### Original video
+[![]()]
+
+
+### Result (with manual subtitle correction)
+[![]()]
+
+
+### Result (without manual subtitle correction)
+As you can see, in Hungarian the medium model works quite well. 
+The `large` model could be even better: **if** you have the hardware. :)
+[![]()]
+
+### Arguments
 
 See `lazyshorts -h`
 
 
-## Subtitles
+### Subtitles
 
 We use Whisper to transcribe audible voices to text. 
 
@@ -17,11 +33,11 @@ Obviously with non-english languages the accuracy can be lower: you can help tha
 - ...editing subtitles manually from segment to segment. (`{lazyshorts-py} e1 2 45 78`...)
 
 
-## Not tested
+### Not tested
 - I don't know if running Whisper on GPU works, you could try CUDA. See `--whisper_device` and PyTorch/Whisper documentation.
 
 
-## Known issues
+### Known issues
 
 - `moviepy` is largely unmaintained at the moment, somehow it collides with `multiprocessing` and the whole tool can crash-and-burn (as in, freeze) and you'll have to force exit. The renders still completed in my testing.
 - We could use `rich` to have nice progress bars, as currently you have to manually poll the status of the renders.
