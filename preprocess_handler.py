@@ -37,4 +37,6 @@ class PreprocessHandler:
         return video, audio
     def process_video(self, video):
         video, audio = self._preprocess_video(video)
-        return video, self._transcriber.audio_to_segments(audio)
+        segments = self._transcriber.audio_to_segments(audio)
+        self._transcriber.clear()
+        return video, segments

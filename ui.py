@@ -1,10 +1,13 @@
 import sys
+import editor
+
 from render_handler import RenderStatus
 
 class UI:
-    def __init__(self, render_manager):
+    def __init__(self, name, file, render_manager):
+        self._name = name
         self._render_manager = render_manager
-        self._start("test3.mp4")
+        self._start(file)
     
     def state_to_str(state):
         states = {
@@ -42,7 +45,7 @@ class UI:
         return segments
 
     def _main_loop(self, count):
-        command, selected = self._input_to_command(input("(lazyshorts-py) "))
+        command, selected = self._input_to_command(input(f"({self._name}) "))
         if command == "q": # quit
             UI._exit()
         elif command == "p": # print
