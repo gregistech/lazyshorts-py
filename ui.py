@@ -1,5 +1,6 @@
 import sys
 import editor
+import multiprocessing
 
 from render_handler import RenderStatus
 
@@ -84,6 +85,8 @@ class UI:
     
     def _exit(code = 0, msg = ""):
         print(msg)
+        for child in multiprocessing.active_children():
+            child.kill()
         sys.exit(code)
     
     def _ready(self):
@@ -93,5 +96,8 @@ class UI:
 
     def _start(self, file):
         print(f"Sending {file} to preprocess: this might take a while...")
-        self._render_manager.start(file)
+        try:
+            self._render_manager.start(file)
+        except KeyboardInterrupt:
+            UI._exit(125, "\nInterrupted while preprocessing video!")
         self._ready()

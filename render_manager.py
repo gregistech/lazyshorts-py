@@ -41,7 +41,7 @@ class RenderManager():
             render = self._queue.get_nowait()
             state = self._manager.list()
             renderer = RenderHandler(self._wdmng, self.video, render)
-            process = Process(target=renderer.render_file, args=(state,)).start()
+            process = Process(target=renderer.render_file, args=(state,), daemon=True).start()
             self.renderer_states.append([state, render[1]])
         except Empty:
             return
