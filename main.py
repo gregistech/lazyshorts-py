@@ -14,7 +14,7 @@ def main():
         parser = argparse.ArgumentParser(prog=NAME, description=DESC)
 
         parser.add_argument("--work_dir", 
-                help = "The directory where the command should work in.", 
+                help = "The directory where the tool should work in.", 
                 default = False
         )
 
@@ -32,7 +32,7 @@ def main():
         )
 
         parser.add_argument("file", 
-                help = "The file on which the command should work on."
+                help = "The file on which the tool should work on."
         )
 
         args = parser.parse_args()
