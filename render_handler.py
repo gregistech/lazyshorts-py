@@ -25,18 +25,7 @@ class RenderHandler():
         self.wdmng = wdmng
         self._video = video
         self._segments, self._final_file = render
-        self._status, self._progress = RenderStatus.START, 0
-        self.states = None
     
-    @property
-    def state(self):
-        return (self._final_file, self._status, self._progress)
-    @state.setter
-    def state(self, state):
-        self._status = state[0]
-        self._progress += state[1]
-        self.states.put((self._status, self._progress))
-
     # NOTE: whisper can return longer timestamps than original duration...
     def _get_segment_end(self, segment):
         original = VideoFileClip(self._video)
@@ -94,22 +83,20 @@ class RenderHandler():
             file.write(srt.compose(subs))
         return sub_file
     
-    def render_file(self, queue):
-        self.states = queue
-
-        self.state = (RenderStatus.SEGMENT_TO_CLIP, .2)
+    def render_file(self, state):
+        state[:] = [RenderStatus.SEGMENT_TO_CLIP, .2]
         concat, subs = self._segments_to_clip_and_subs()
-
-        self.state = (RenderStatus.CROP_CLIP, .2)
+        
+        state[:] = [RenderStatus.CROP_CLIP, .4]
         cropped = RenderHandler._crop_clip(concat)
 
-        self.state = (RenderStatus.END_CLIP, .2)
+        state[:] = [RenderStatus.END_CLIP, .6]
         end_file = self._clip_to_file(RenderHandler._overlay_end_text_on_clip(cropped))
 
-        self.state = (RenderStatus.SUB_CLIP, .2)
+        state[:] = [RenderStatus.SUB_CLIP, .8]
         subbed_file = self._burn_in_subs_to_file(end_file, self._subs_to_file(subs))
 
-        self.state = (RenderStatus.MOVE_CLIP, .1)
+        state[:] = [RenderStatus.MOVE_CLIP, .9]
         shutil.move(subbed_file, self._final_file)
 
-        self.state = (RenderStatus.FINISH, .1)
+        state[:] = [RenderStatus.FINISH, 1]

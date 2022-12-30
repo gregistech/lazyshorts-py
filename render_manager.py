@@ -10,26 +10,9 @@ class RenderManager():
         self._preprocess_handler = preprocess_handler
         self.video, self.segments = "", []
         self._queue = Queue()
-        self._renderers_queue = Queue()
-        self._renderers = []
+        self._manager = Manager()
+        self.renderer_states = self._manager.list()
     
-    @property
-    def renderers(self):
-        while not self._renderers_queue.empty():
-            self._renderers.append(self._renderers_queue.get_nowait())
-        return self._renderers
-    
-    @property
-    def renderer_states(self):
-        states = []
-        for renderer in self.renderers:
-            state = 0
-            while not renderer[0].empty():
-                state = renderer[0].get_nowait()
-            states.append(state)
-        return states
-
-
     def add_to_queue(self, render):
         self._queue.put(render)
     
@@ -55,11 +38,10 @@ class RenderManager():
 
     def _render_next(self):
         try:
-            render = self._queue.get()
-            manager = Manager()
-            queue = manager.Queue()
+            render = self._queue.get_nowait()
+            state = self._manager.list()
             renderer = RenderHandler(self._wdmng, self.video, render)
-            process = Process(target=renderer.render_file, args=(queue,)).start()
-            self._renderers_queue.put((queue, renderer))
+            process = Process(target=renderer.render_file, args=(state,)).start()
+            self.renderer_states.append([state, render[1]])
         except Empty:
             return

@@ -3,7 +3,7 @@ import sys
 class UI:
     def __init__(self, render_manager):
         self._render_manager = render_manager
-        self._start("test2.mp4")
+        self._start("test3.mp4")
 
     def _nums_to_segments(self, nums):
         nums = [num for num in nums if num.isdigit()]
@@ -28,8 +28,10 @@ class UI:
             segment['text'] = editor.edit(contents=segment['text'].encode("UTF-8")).decode("UTF-8")
         return segments
 
-    def _main_loop(self):
+    def _main_loop(self, count):
+        print("before in")
         command, selected = self._input_to_command(input("(lazyshorts-py) "))
+        print("after in")
         if command == "q": # quit
             UI._exit()
         elif command == "p": # print
@@ -41,17 +43,17 @@ class UI:
                 print("You need to give atleast one segment to edit!")
         elif command == "r": # render
             if len(selected) > 0:
-                file = "short.mp4"
+                file = f"short{count}.mp4"
                 self._render_manager.add_to_queue((selected, file))
                 print()
                 UI._print_segments(selected)
                 print(f"Added {file} to the queue with the above segments!")
+                count += 1
             else:
                 print("You need to give atleast one segment to render!")
         elif command == "s": # state
             for state in self._render_manager.renderer_states:
-                print()
-                print(f"{state[0]}: {state[1]} ({state[2]})")
+                print(f"{state[0][0]}: {state[1]} ({state[0][1] * 100}%)")
         elif not command:
             print("Your input cannot be empty!")
         else:
@@ -59,9 +61,11 @@ class UI:
         return False
 
     def _handle_loop(self):
+        count = 0
         while True:
+            print("start")
             try:
-                self._main_loop()
+                self._main_loop(count)
             except KeyboardInterrupt:
                UI._exit()
     

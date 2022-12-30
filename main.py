@@ -13,6 +13,3 @@ if __name__ == '__main__':
     rdmng = RenderManager(wdmng, preprocess_handler)
 
     UI(rdmng)
-
-    # FIXME: will cause deadlock...
-    mgmt_proc.join()
