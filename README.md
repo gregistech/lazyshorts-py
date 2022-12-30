@@ -19,7 +19,7 @@ https://user-images.githubusercontent.com/29675001/210073848-09bcd7b7-6a86-4114-
 
 ### Result (without manual subtitle correction)
 
-As you can see, in Hungarian the medium model works quite well: considering the bad quality of my input. 
+As you can see, in Hungarian the `medium` model works quite well: considering the bad quality of my input. 
 The `large` model could be even better: **if** you have the hardware. :)
 
 https://user-images.githubusercontent.com/29675001/210073868-f650cef7-093c-4260-9407-c6bc7de1b59e.mp4
