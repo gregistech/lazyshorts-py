@@ -1,9 +1,22 @@
 import sys
+from render_handler import RenderStatus
 
 class UI:
     def __init__(self, render_manager):
         self._render_manager = render_manager
         self._start("test3.mp4")
+    
+    def state_to_str(state):
+        states = {
+                RenderStatus.START: "Started",
+                RenderStatus.SEGMENT_TO_CLIP: "Converting segments to clip",
+                RenderStatus.CROP_CLIP: "Cropping clip to format",
+                RenderStatus.END_CLIP: "Burning-in end text",
+                RenderStatus.SUB_CLIP: "Burning-in subtitles",
+                RenderStatus.MOVE_CLIP: "Moving clip to final file",
+                RenderStatus.FINISH: "Finished",
+        }
+        return states.get(state, "Unknown render status")
 
     def _nums_to_segments(self, nums):
         nums = [num for num in nums if num.isdigit()]
@@ -51,18 +64,18 @@ class UI:
                 print("You need to give atleast one segment to render!")
         elif command == "s": # state
             for state in self._render_manager.renderer_states:
-                print(f"{state[0][0]}: {state[1]} ({state[0][1] * 100}%)")
+                print(f"{state[1]}: {UI.state_to_str(state[0][0])} ({state[0][1] * 100}%)")
         elif not command:
             print("Your input cannot be empty!")
         else:
             print("Sorry, unknown command!")
-        return False
+        return count
 
     def _handle_loop(self):
         count = 0
         while True:
             try:
-                self._main_loop(count)
+                count = self._main_loop(count)
             except KeyboardInterrupt:
                UI._exit()
     
