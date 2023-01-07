@@ -8,5 +8,6 @@ moviepy/
 *.swp
 
 __pycache__/
+dist/
 
 *.egg-info
