@@ -2,7 +2,7 @@ import sys
 import editor
 import multiprocessing
 
-from render_handler import RenderStatus
+from .render_handler import RenderStatus
 
 class UI:
     def __init__(self, name, file, render_manager):

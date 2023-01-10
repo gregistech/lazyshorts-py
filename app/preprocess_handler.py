@@ -1,6 +1,5 @@
 
 import subprocess
-from moviepy.editor import VideoFileClip
 
 from queue import Empty
 from multiprocessing import Process, Queue
@@ -27,9 +26,10 @@ class PreprocessHandler:
         )
         return fast
     def _v_to_a(self, video):
-        clip = VideoFileClip(video)
         audio = self._work_dir_handler.create_file("audio.wav")
-        clip.audio.write_audiofile(audio, logger=None)
+        subprocess.run(["ffmpeg", "-i", video, audio],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.STDOUT)
         return audio
     def _preprocess_video(self, original_video):
         video = self._cut_silence(original_video)

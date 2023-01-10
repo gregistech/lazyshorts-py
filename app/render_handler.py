@@ -5,11 +5,9 @@ from enum import Enum, auto
 import srt
 from datetime import timedelta
 
-from moviepy.editor import *
-from moviepy.video.tools.subtitles import SubtitlesClip
-from moviepy.video.fx.all import crop
-
 import shutil
+
+from ffprobe import FFProbe
 
 class RenderStatus(Enum):
     START = auto()
@@ -27,18 +25,24 @@ class RenderHandler():
         self._segments, self._final_file = render
         self._end_text, self._end_time = end_text, end_time
     
+    def _get_clip_end(self, clip):
+        return float(FFProbe(clip).streams[0].duration)
+
     # NOTE: whisper can return longer timestamps than original duration...
     def _get_segment_end(self, segment):
-        original = VideoFileClip(self._video)
-        return segment['end'] if segment['end'] < original.end else original.end
+        end = self._get_clip_end(self._video)
+        return segment['end'] if segment['end'] < end else end
     def _get_segment_relative_end(self, segment, last_end):
         return last_end + (self._get_segment_end(segment) - segment["start"])
 
     def _segment_to_clip(self, segment):
-        original = VideoFileClip(self._video)
-        return original.subclip(segment['start'], self._get_segment_end(segment))
+        clip = self.wdmng.create_file("segment.mp4")
+        subprocess.run(["ffmpeg", "-y", "-i", self._video, "-ss", str(segment['start']), "-to", str(self._get_segment_end(segment)), clip], 
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.STDOUT
+        )
+        return clip
     def _segment_to_sub(self, segment, i, last_end, current_end):
-        original = VideoFileClip(self._video)
         return srt.Subtitle(i, 
                 timedelta(seconds=last_end), 
                 timedelta(seconds=current_end), 
@@ -50,6 +54,23 @@ class RenderHandler():
             last_end = end
             end = self._get_segment_relative_end(segment, last_end)
             f(segment, i, last_end, end)
+
+    def _concat_clips(self, clips):
+        inp = ""
+        for clip in clips:
+            inp += f"file '{clip}'\n"
+
+        file_list = self.wdmng.create_file("concat.txt")
+        with open(file_list, "w") as file:
+            file.write(inp)
+
+        file = self.wdmng.create_file("concat.mp4")
+        subprocess.run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", file_list, "-c:v", "copy", "-c:a", "copy", file], 
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.STDOUT
+        )
+        return file
+
     def _segments_to_clip_and_subs(self):
         clips = []
         subs = []
@@ -60,26 +81,35 @@ class RenderHandler():
                         subs.append(self._segment_to_sub(segment, i, last_end, current_end))
                     ]
         )
-        return concatenate_videoclips(clips), subs
+        return self._concat_clips(clips), subs
 
-    def _crop_clip(clip):
-        (w, h) = clip.size
-        return crop(clip, x_center = w/2, y_center = h/2, width = 607, height = 1080)
-    def _clip_to_file(self, clip):
-        # FIXME: this blocks the main process after multiple runs somehow, 
-        # moviepy is unmaintained, I might need to switch libraries...
-        # FIXME: also, we don't set the temp dir, creates temp audio files in current dir (not work dir)
-        clip_file = self.wdmng.create_file("end.mp4")
-        clip.write_videofile(clip_file, logger=None) 
-        return clip_file
-    def _overlay_end_text_on_clip(clip, end_text = "The End", end_time = 5):
-        return concatenate_videoclips([clip.subclip(0, clip.end - end_time), CompositeVideoClip([clip.subclip(clip.end - end_time, clip.end), TextClip(end_text, fontsize = 48, method = "caption", font = "Arial", color="white").set_duration(end_time).set_position("center", "center")])])
+    def _crop_clip(self, clip):
+        file = self.wdmng.create_file("crop.mp4")
+        subprocess.run(["ffmpeg", "-y", "-i", clip, "-filter_complex", "[0]scale=3414:1920,crop=1080:1920", "-c:a", "copy", file], 
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.STDOUT
+        )
+        return file
+    def _overlay_end_text_on_clip(self, clip, text = "The End", time = 5):
+        end = self._get_clip_end(self._video)
+        start = end - time
+        subs = [
+            srt.Subtitle(0, timedelta(seconds=start), timedelta(seconds=end), text)
+        ]
+        sub_file = self._subs_to_file(subs)
+        file = self.wdmng.create_file("end.mp4")
+        subprocess.run(["ffmpeg", "-y", "-i", clip, "-vf", f"subtitles={sub_file}:force_style='Alignment=10,Fontsize=24'", "-c:a", "copy", file],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.STDOUT
+        )
+        return file
 
     def _burn_in_subs_to_file(self, file, sub_file):
         subbed_file = self.wdmng.create_file("subbed.mp4")
         subprocess.run(["ffmpeg", "-y", "-i", file, "-vf", f"subtitles={sub_file}:force_style='Alignment=2,MarginV=50,Fontsize=12'", "-c:a", "copy", subbed_file],
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.STDOUT)
+            stderr=subprocess.STDOUT
+        )
         return subbed_file
     def _subs_to_file(self, subs):
         sub_file = self.wdmng.create_file("subs.srt")
@@ -92,10 +122,10 @@ class RenderHandler():
         concat, subs = self._segments_to_clip_and_subs()
         
         state[:] = [RenderStatus.CROP_CLIP, .4]
-        cropped = RenderHandler._crop_clip(concat)
+        cropped = self._crop_clip(concat)
 
         state[:] = [RenderStatus.END_CLIP, .6]
-        end_file = self._clip_to_file(RenderHandler._overlay_end_text_on_clip(cropped, self._end_text, self._end_time))
+        end_file = self._overlay_end_text_on_clip(cropped, self._end_text, self._end_time)
 
         state[:] = [RenderStatus.SUB_CLIP, .8]
         subbed_file = self._burn_in_subs_to_file(end_file, self._subs_to_file(subs))

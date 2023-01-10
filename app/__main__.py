@@ -1,13 +1,15 @@
-from render_manager import RenderManager
-from preprocess_handler import PreprocessHandler
-from working_directory_manager import WorkingDirectoryManager
-from transcriber import Transcriber
-from ui import UI
+from .render_manager import RenderManager
+from .preprocess_handler import PreprocessHandler
+from .working_directory_manager import WorkingDirectoryManager
+from .transcriber import Transcriber
+from .ui import UI
 
 import argparse
 
+if __name__ == "main":
+    main()
+
 def main():
-    if __name__ == "main":
         NAME = "lazyshorts-py"
         DESC = "A command to convert long-form videos into multiple short-form videos, with burned-in text and subtitles."
 

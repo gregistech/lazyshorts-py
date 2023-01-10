@@ -1,8 +1,9 @@
-uuid
+uuid7
 python-editor
 torch @ https://download.pytorch.org/whl/cpu/torch-1.13.1%2Bcpu-cp310-cp310-linux_x86_64.whl
 whisper-openai
-moviepy==2.0.0.dev2
+moviepy==2.0.0dev2
 argparse
 srt
 auto-editor
+ffprobe-python

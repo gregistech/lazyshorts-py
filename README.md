@@ -49,7 +49,7 @@ Obviously with non-english languages the accuracy can be lower: you can help tha
 
 ### Known issues
 
-- `moviepy` is largely unmaintained at the moment, somehow it collides with `multiprocessing` and the whole tool can crash-and-burn (as in, freeze) and you'll have to force exit. The renders still completed in my testing.
+- 'subprocess.run' somehow blocks UI process.
 - We could use `rich` to have nice progress bars, as currently you have to manually poll the status of the renders.
 - Cropping is just arbitrary: I wanted to use MediaPipe. It's not easy to even get it to run, but my resources were not enough. Maybe a less demanding model or cloud is needed?
 - Don't combine segments that are less than `end_time`, you'll get an exception.

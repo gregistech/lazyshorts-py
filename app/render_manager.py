@@ -1,4 +1,4 @@
-from render_handler import RenderHandler, RenderStatus
+from .render_handler import RenderHandler, RenderStatus
 
 from queue import Empty
 from multiprocessing import Process, Queue, Pool, Manager

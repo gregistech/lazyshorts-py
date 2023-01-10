@@ -1,5 +1,5 @@
 import tempfile
-import uuid
+from uuid_extensions import uuid7str
 from pathlib import Path
 import os
 import shutil
@@ -44,7 +44,7 @@ class WorkingDirectoryManager:
             shutil.rmtree(self.work_dir)
     
     def _generate_name(self, name):
-        return str(uuid.uuid4()) + name
+        return str(uuid7str()) + name
     def _register_generated_name(self, name):
         return self.register_name(self._generate_name(name))
     def register_name(self, name):
