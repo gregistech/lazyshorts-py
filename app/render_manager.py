@@ -17,15 +17,8 @@ class RenderManager():
     def add_to_queue(self, render):
         self._queue.put(render)
     
-    #def _join_finished(self):
-    #    for renderer, process in self.renderers:
-    #        if renderer.state[1] == RenderStatus.FINISH:
-    #            # NOTE: arbitrary number, is it good?
-    #            process.join(timeout=5)
-
     def _main_loop(self):
         self._render_next()
-        #self._join_finished()
     
     def _start_execution(self, video, segments):
         self.video = video

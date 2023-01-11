@@ -98,7 +98,7 @@ class RenderHandler():
         ]
         sub_file = self._subs_to_file(subs)
         file = self.wdmng.create_file("end.mp4")
-        subprocess.run(["ffmpeg", "-y", "-i", clip, "-vf", f"subtitles={sub_file}:force_style='Alignment=10,Fontsize=24'", "-c:a", "copy", file],
+        subprocess.run(["ffmpeg", "-y", "-i", clip, "-vf", f"subtitles={sub_file}:force_style='Alignment=10,Fontsize=12'", "-c:a", "copy", file],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.STDOUT
         )
