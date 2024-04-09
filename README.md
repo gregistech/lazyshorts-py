@@ -1,3 +1,8 @@
+See [lazysys](https://github.com/lazysys) for the revamped version.
+
+
+---
+
 # LazyShorts
 
 A command-line tool to convert long-form videos into multiple short-form videos, with burned-in text and subtitles.
